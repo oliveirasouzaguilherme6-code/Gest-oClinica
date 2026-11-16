@@ -1,5 +1,6 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
-import { encerrarSessao } from "../services/api";
+import { ApiError, encerrarSessao } from "../services/api";
 
 type SistemaLayoutProps = {
   children: ReactNode;
@@ -7,6 +8,20 @@ type SistemaLayoutProps = {
 };
 
 export function SistemaLayout({ children, paginaAtiva }: SistemaLayoutProps) {
+  const [saindo, setSaindo] = useState(false);
+  const [erroSaida, setErroSaida] = useState("");
+
+  async function sair() {
+    setSaindo(true);
+    setErroSaida("");
+    try {
+      await encerrarSessao();
+    } catch (error) {
+      setErroSaida(error instanceof ApiError ? error.message : "Não foi possível sair do sistema.");
+      setSaindo(false);
+    }
+  }
+
   return (
     <div className="system-page">
       <header className="system-header">
@@ -19,13 +34,16 @@ export function SistemaLayout({ children, paginaAtiva }: SistemaLayoutProps) {
           <a className={paginaAtiva === "indicadores" ? "active" : ""} href="/estatisticas">
             Estatísticas
           </a>
-          <button className="logout-link" type="button" onClick={() => void encerrarSessao()}>
-            Sair
+          <button className="logout-link" type="button" onClick={sair} disabled={saindo}>
+            {saindo ? "Saindo..." : "Sair"}
           </button>
         </nav>
       </header>
 
-      <main className="system-main">{children}</main>
+      <main className="system-main">
+        {erroSaida && <p className="feedback error-box" role="alert">{erroSaida}</p>}
+        {children}
+      </main>
     </div>
   );
 }

@@ -1,13 +1,9 @@
 import { Request, Response } from "express";
 import { Usuario } from "../models/Usuario";
-import {
-  Autenticacao,
-  criarSessao,
-  definirCookieSessao,
-  encerrarSessao,
-  removerCookieSessao,
-} from "../services/sessaoService";
+import { criarSessao } from "../services/sessaoService";
+import type { Autenticacao } from "../services/sessaoService";
 import { verificarSenha } from "../services/senhaService";
+import { emailEhValido } from "../validators/usuarioValidator";
 
 function apresentarAutenticacao(autenticacao: Autenticacao) {
   return {
@@ -29,6 +25,11 @@ export async function login(request: Request, response: Response): Promise<void>
     return;
   }
 
+  if (!emailEhValido(email)) {
+    response.status(400).json({ mensagem: "Informe um e-mail válido." });
+    return;
+  }
+
   const usuario = await Usuario.findOne({ where: { email } });
 
   if (!usuario || !(await verificarSenha(senha, usuario.senhaHash))) {
@@ -36,11 +37,12 @@ export async function login(request: Request, response: Response): Promise<void>
     return;
   }
 
-  const sessaoCriada = await criarSessao(usuario.id);
-  definirCookieSessao(response, sessaoCriada.token);
+  const token = await criarSessao(usuario.id);
 
+  response.setHeader("Cache-Control", "no-store");
   response.json({
     mensagem: "Login realizado com sucesso.",
+    token,
   });
 }
 
@@ -50,8 +52,8 @@ export function consultarSessao(_request: Request, response: Response): void {
   response.json(apresentarAutenticacao(autenticacao));
 }
 
-export async function logout(request: Request, response: Response): Promise<void> {
-  await encerrarSessao(request);
-  removerCookieSessao(response);
+export async function logout(_request: Request, response: Response): Promise<void> {
+  const autenticacao = response.locals.autenticacao as Autenticacao;
+  await autenticacao.sessao.destroy();
   response.status(204).send();
 }

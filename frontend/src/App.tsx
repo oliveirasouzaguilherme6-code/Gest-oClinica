@@ -1,24 +1,32 @@
+import type { ReactNode } from "react";
 import { CadastroPage } from "./pages/CadastroPage";
 import { EstatisticasPage } from "./pages/EstatisticasPage";
+import { InicioPage } from "./pages/InicioPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SistemaPage } from "./pages/SistemaPage";
 
-function PublicLayout({ pagina }: { pagina: "cadastro" | "login" }) {
+type PublicLayoutProps = {
+  pagina: "inicio" | "cadastro" | "login";
+  children: ReactNode;
+};
+
+function PublicLayout({ pagina, children }: PublicLayoutProps) {
   return (
     <div className="page">
       <header className="simple-header">
-        <a className="simple-brand" href="/login">Gestão Clínica</a>
+        <a className="simple-brand" href="/" aria-current={pagina === "inicio" ? "page" : undefined}>
+          Gestão Clínica
+        </a>
         <nav aria-label="Navegação principal">
-          <a href="/login">Login</a>
-          <a href="/cadastro">Cadastro</a>
+          {pagina === "inicio" && <a href="#sobre">Sobre</a>}
+          <a href="/login" aria-current={pagina === "login" ? "page" : undefined}>Entrar</a>
+          <a href="/cadastro" aria-current={pagina === "cadastro" ? "page" : undefined}>Cadastro</a>
         </nav>
       </header>
 
-      <main className="auth-main">
-        {pagina === "login" ? <LoginPage /> : <CadastroPage />}
-      </main>
+      <main className={pagina === "inicio" ? "institutional-main" : "auth-main"}>{children}</main>
 
-      <footer className="simple-footer">Projeto acadêmico — Sprint 1</footer>
+      <footer className="simple-footer">Projeto acadêmico</footer>
     </div>
   );
 }
@@ -28,20 +36,24 @@ function PaginaNaoEncontrada() {
     <section className="card compact-card not-found">
       <h1>Página não encontrada</h1>
       <p className="description">O endereço informado não existe.</p>
-      <a className="button-link" href="/login">Voltar ao login</a>
+      <a className="button-link" href="/">Voltar ao início</a>
     </section>
   );
 }
 
 function App() {
-  const path = window.location.pathname;
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
 
-  if (path === "/" || path === "/login") {
-    return <PublicLayout pagina="login" />;
+  if (path === "/") {
+    return <PublicLayout pagina="inicio"><InicioPage /></PublicLayout>;
+  }
+
+  if (path === "/login") {
+    return <PublicLayout pagina="login"><LoginPage /></PublicLayout>;
   }
 
   if (path === "/cadastro") {
-    return <PublicLayout pagina="cadastro" />;
+    return <PublicLayout pagina="cadastro"><CadastroPage /></PublicLayout>;
   }
 
   if (path === "/sistema") {

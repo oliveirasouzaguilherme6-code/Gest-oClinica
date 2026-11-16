@@ -75,9 +75,7 @@ export function CadastroPage() {
 
   return (
     <section className="card" aria-labelledby="titulo-cadastro">
-      <span className="eyebrow">Gestão Clínica</span>
       <h1 id="titulo-cadastro">Cadastro de usuário</h1>
-      <p className="description">Preencha os dados para criar seu cadastro.</p>
 
       <form onSubmit={handleSubmit} noValidate>
         <div className="field">

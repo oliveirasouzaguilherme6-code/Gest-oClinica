@@ -11,6 +11,10 @@ export type ErrosFormulario = Partial<Record<keyof FormularioCadastro, string>>;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SENHA_FORTE_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
+export function emailEhValido(email: string): boolean {
+  return email.length <= 150 && EMAIL_REGEX.test(email);
+}
+
 export function somenteNumeros(valor: string): string {
   return valor.replace(/\D/g, "");
 }
@@ -22,7 +26,7 @@ export function validarFormulario(dados: FormularioCadastro): ErrosFormulario {
     erros.nome = "Informe seu nome completo.";
   }
 
-  if (!EMAIL_REGEX.test(dados.email.trim())) {
+  if (!emailEhValido(dados.email.trim())) {
     erros.email = "Informe um e-mail válido.";
   }
 

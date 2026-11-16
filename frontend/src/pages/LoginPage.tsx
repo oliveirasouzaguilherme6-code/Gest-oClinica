@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { ApiError, loginUsuario } from "../services/api";
+import { emailEhValido } from "../validacoes";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -11,16 +12,21 @@ export function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMensagem("");
+    const emailNormalizado = email.trim().toLowerCase();
 
-    if (!email.trim() || !senha) {
+    if (!emailNormalizado || !senha) {
       setMensagem("Preencha o e-mail e a senha.");
+      return;
+    }
+    if (!emailEhValido(emailNormalizado)) {
+      setMensagem("Informe um e-mail válido.");
       return;
     }
 
     setEnviando(true);
 
     try {
-      await loginUsuario(email.trim().toLowerCase(), senha);
+      await loginUsuario(emailNormalizado, senha);
       window.location.assign("/sistema");
     } catch (error) {
       setMensagem(error instanceof ApiError ? error.message : "Ocorreu um erro inesperado.");
@@ -31,9 +37,7 @@ export function LoginPage() {
 
   return (
     <section className="card compact-card" aria-labelledby="titulo-login">
-      <span className="eyebrow">Acesso administrativo</span>
       <h1 id="titulo-login">Entrar no sistema</h1>
-      <p className="description">Use as credenciais cadastradas para acessar o painel.</p>
 
       <form onSubmit={handleSubmit} className="login-form">
         <div className="field text-left">

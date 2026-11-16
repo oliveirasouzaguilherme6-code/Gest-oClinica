@@ -1,11 +1,12 @@
-import { createHash, randomBytes } from "node:crypto";
-import { Request, Response } from "express";
+import { createHash, randomUUID } from "node:crypto";
+import type { Request } from "express";
+import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
 import { Sessao } from "../models/Sessao";
 import { Usuario } from "../models/Usuario";
 
-const COOKIE_SESSAO = "gestao_clinica_sessao";
-const DURACAO_SESSAO_MS = 8 * 60 * 60 * 1000;
+const EMISSOR = "gestao-clinica";
+const DURACAO_SESSAO_SEGUNDOS = 8 * 60 * 60;
 
 export type Autenticacao = {
   usuario: Usuario;
@@ -16,42 +17,52 @@ function gerarTokenHash(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function obterTokenDoCookie(request: Request): string | null {
-  const cookies = request.headers.cookie?.split(";") ?? [];
-
-  for (const cookie of cookies) {
-    const [nome, ...partesValor] = cookie.trim().split("=");
-
-    if (nome === COOKIE_SESSAO) {
-      return decodeURIComponent(partesValor.join("="));
-    }
+export function obterSegredoJwt(): string {
+  const segredo = process.env.JWT_SECRET?.trim() ?? "";
+  if (Buffer.byteLength(segredo, "utf8") < 32) {
+    throw new Error("Configure JWT_SECRET no backend/.env com uma chave aleatória de pelo menos 32 bytes.");
   }
-
-  return null;
+  return segredo;
 }
 
-export async function criarSessao(usuarioId: number): Promise<{
-  token: string;
-  expiraEm: Date;
-}> {
-  await Sessao.destroy({ where: { expiraEm: { [Op.lt]: new Date() } } });
+export async function criarSessao(usuarioId: number): Promise<string> {
+  const agora = new Date();
+  await Sessao.destroy({ where: { expiraEm: { [Op.lte]: agora } } });
 
-  const token = randomBytes(32).toString("hex");
-  const expiraEm = new Date(Date.now() + DURACAO_SESSAO_MS);
+  const emitidoEm = Math.floor(Date.now() / 1000);
+  const token = jwt.sign({ iat: emitidoEm }, obterSegredoJwt(), {
+    algorithm: "HS256",
+    issuer: EMISSOR,
+    subject: String(usuarioId),
+    jwtid: randomUUID(),
+    expiresIn: DURACAO_SESSAO_SEGUNDOS,
+  });
 
   await Sessao.create({
     tokenHash: gerarTokenHash(token),
     usuarioId,
-    expiraEm,
+    expiraEm: new Date((emitidoEm + DURACAO_SESSAO_SEGUNDOS) * 1000),
   });
 
-  return { token, expiraEm };
+  return token;
 }
 
 export async function obterAutenticacao(request: Request): Promise<Autenticacao | null> {
-  const token = obterTokenDoCookie(request);
+  const token = /^Bearer\s+(\S+)$/i.exec(request.headers.authorization ?? "")?.[1];
 
   if (!token) {
+    return null;
+  }
+
+  const segredo = obterSegredoJwt();
+  let payload: string | jwt.JwtPayload;
+  try {
+    payload = jwt.verify(token, segredo, { algorithms: ["HS256"], issuer: EMISSOR });
+  } catch {
+    return null;
+  }
+
+  if (typeof payload === "string" || !payload.sub || typeof payload.exp !== "number") {
     return null;
   }
 
@@ -62,7 +73,7 @@ export async function obterAutenticacao(request: Request): Promise<Autenticacao 
     },
   });
 
-  if (!sessao) {
+  if (!sessao || String(sessao.usuarioId) !== payload.sub) {
     return null;
   }
 
@@ -74,31 +85,4 @@ export async function obterAutenticacao(request: Request): Promise<Autenticacao 
   }
 
   return { usuario, sessao };
-}
-
-export async function encerrarSessao(request: Request): Promise<void> {
-  const token = obterTokenDoCookie(request);
-
-  if (token) {
-    await Sessao.destroy({ where: { tokenHash: gerarTokenHash(token) } });
-  }
-}
-
-export function definirCookieSessao(response: Response, token: string): void {
-  response.cookie(COOKIE_SESSAO, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: DURACAO_SESSAO_MS,
-    path: "/",
-  });
-}
-
-export function removerCookieSessao(response: Response): void {
-  response.clearCookie(COOKIE_SESSAO, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-  });
 }

@@ -12,7 +12,7 @@ export function SistemaPage() {
     obterSessao()
       .then(setAutenticacao)
       .catch((error: unknown) => {
-        if (error instanceof ApiError && error.message.includes("sessão")) {
+        if (error instanceof ApiError && error.status === 401) {
           window.location.replace("/login");
           return;
         }
@@ -41,9 +41,7 @@ export function SistemaPage() {
   return (
     <SistemaLayout paginaAtiva="visao-geral">
       <section className="card system-card">
-        <span className="eyebrow">Área do sistema</span>
         <h1>Bem-vindo, {primeiroNome}</h1>
-        <p className="description">Você entrou no sistema com sucesso.</p>
 
         <div className="user-details">
           <div>

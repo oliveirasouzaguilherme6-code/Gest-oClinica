@@ -4,6 +4,7 @@ import { connectToDatabase } from "./database/sequelize";
 import { authRouter } from "./routes/authRoutes";
 import { estatisticasRouter } from "./routes/estatisticasRoutes";
 import { usuarioRouter } from "./routes/usuarioRoutes";
+import { obterSegredoJwt } from "./services/sessaoService";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
@@ -37,6 +38,7 @@ async function startServer(): Promise<void> {
     throw new Error("A porta da aplicação é inválida.");
   }
 
+  obterSegredoJwt();
   await connectToDatabase();
 
   app.listen(port, () => {

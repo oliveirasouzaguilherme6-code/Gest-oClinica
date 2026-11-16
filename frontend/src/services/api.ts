@@ -7,6 +7,8 @@ export type DadosCadastroApi = {
 
 export type ErrosApi = Partial<Record<keyof DadosCadastroApi, string>>;
 
+const CHAVE_TOKEN = "gestao_clinica_token";
+
 type RespostaApi = {
   mensagem?: string;
   erros?: ErrosApi;
@@ -35,95 +37,97 @@ export class ApiError extends Error {
   constructor(
     mensagem: string,
     public readonly erros: ErrosApi = {},
+    public readonly status?: number,
   ) {
     super(mensagem);
     this.name = "ApiError";
   }
 }
 
-export async function cadastrarUsuario(dados: DadosCadastroApi): Promise<void> {
-  let response: Response;
+async function requisitar(
+  url: string,
+  mensagemPadrao: string,
+  { autenticado, ...opcoes }: RequestInit & { autenticado?: boolean } = {},
+): Promise<Response> {
+  const token = autenticado ? localStorage.getItem(CHAVE_TOKEN) : null;
+  if (autenticado && !token) {
+    throw new ApiError("Entre para acessar o sistema.", {}, 401);
+  }
 
+  const headers = new Headers(opcoes.headers);
+  headers.set("Accept", "application/json");
+  if (opcoes.body) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  let response: Response;
   try {
-    response = await fetch("/api/usuarios", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dados),
-    });
+    response = await fetch(url, { ...opcoes, headers });
   } catch {
     throw new ApiError("Não foi possível conectar com a API.");
   }
 
-  const body = await response.json().catch(() => ({})) as RespostaApi;
-
   if (!response.ok) {
-    throw new ApiError(body.mensagem ?? "Não foi possível realizar o cadastro.", body.erros);
+    if (response.status === 401 && token && localStorage.getItem(CHAVE_TOKEN) === token) {
+      localStorage.removeItem(CHAVE_TOKEN);
+    }
+    const body = await response.json().catch(() => null) as RespostaApi | null;
+    throw new ApiError(body?.mensagem ?? mensagemPadrao, body?.erros, response.status);
   }
+  return response;
+}
+
+export async function cadastrarUsuario(dados: DadosCadastroApi): Promise<void> {
+  await requisitar("/api/usuarios", "Não foi possível realizar o cadastro.", {
+    method: "POST",
+    body: JSON.stringify(dados),
+  });
 }
 
 export async function loginUsuario(email: string, senha: string): Promise<void> {
-  let response: Response;
+  const response = await requisitar("/api/auth/login", "Não foi possível realizar o login.", {
+    method: "POST",
+    body: JSON.stringify({ email, senha }),
+  });
 
-  try {
-    response = await fetch("/api/auth/login", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, senha }),
-    });
-  } catch {
-    throw new ApiError("Não foi possível conectar com a API.");
+  const body = await response.json().catch(() => null) as { token?: unknown } | null;
+  if (typeof body?.token !== "string" || !body.token) {
+    throw new ApiError("A API não retornou o token de acesso.");
   }
-
-  const body = await response.json().catch(() => ({})) as RespostaApi;
-
-  if (!response.ok) {
-    throw new ApiError(body.mensagem ?? "Não foi possível realizar o login.");
-  }
+  localStorage.setItem(CHAVE_TOKEN, body.token);
 }
 
-async function obterJson<T>(url: string): Promise<T> {
-  let response: Response;
-
-  try {
-    response = await fetch(url, {
-      credentials: "include",
-      headers: { Accept: "application/json" },
-    });
-  } catch {
-    throw new ApiError("Não foi possível conectar com a API.");
-  }
-
-  const body = await response.json().catch(() => ({})) as T & { mensagem?: string };
-
-  if (!response.ok) {
-    throw new ApiError(body.mensagem ?? "Não foi possível carregar os dados.");
-  }
-
-  return body;
+export async function obterSessao(): Promise<SessaoAtual> {
+  const response = await requisitar("/api/auth/me", "Não foi possível abrir o sistema.", {
+    autenticado: true,
+  });
+  return response.json();
 }
 
-export function obterSessao(): Promise<SessaoAtual> {
-  return obterJson<SessaoAtual>("/api/auth/me");
-}
-
-export function obterEstatisticasCadastros(): Promise<EstatisticasCadastros> {
-  return obterJson<EstatisticasCadastros>("/api/estatisticas/cadastros");
+export async function obterEstatisticasCadastros(): Promise<EstatisticasCadastros> {
+  const response = await requisitar("/api/estatisticas/cadastros", "Não foi possível carregar os dados.", {
+    autenticado: true,
+  });
+  return response.json();
 }
 
 export async function encerrarSessao(): Promise<void> {
+  const token = localStorage.getItem(CHAVE_TOKEN);
   try {
-    await fetch("/api/auth/logout", {
+    await requisitar("/api/auth/logout", "Não foi possível encerrar a sessão. Tente novamente.", {
       method: "POST",
-      credentials: "include",
+      autenticado: true,
     });
-  } finally {
-    window.location.assign("/login");
+  } catch (error) {
+    if (!(error instanceof ApiError && error.status === 401)) {
+      throw error;
+    }
   }
+  if (localStorage.getItem(CHAVE_TOKEN) === token) {
+    localStorage.removeItem(CHAVE_TOKEN);
+  }
+  window.location.replace("/login");
 }
-

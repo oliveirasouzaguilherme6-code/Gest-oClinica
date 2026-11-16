@@ -17,6 +17,10 @@ type ResultadoValidacao =
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SENHA_FORTE_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
+export function emailEhValido(email: string): boolean {
+  return email.length <= 150 && EMAIL_REGEX.test(email);
+}
+
 export function validarCadastro(body: unknown): ResultadoValidacao {
   if (!body || typeof body !== "object") {
     return {
@@ -38,7 +42,7 @@ export function validarCadastro(body: unknown): ResultadoValidacao {
     erros.nome = "O nome deve ter entre 2 e 100 caracteres.";
   }
 
-  if (!EMAIL_REGEX.test(email) || email.length > 150) {
+  if (!emailEhValido(email)) {
     erros.email = "Informe um e-mail válido.";
   }
 
