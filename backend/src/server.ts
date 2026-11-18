@@ -3,6 +3,8 @@ import express, { NextFunction, Request, Response } from "express";
 import { connectToDatabase } from "./database/sequelize";
 import { authRouter } from "./routes/authRoutes";
 import { estatisticasRouter } from "./routes/estatisticasRoutes";
+import { pacienteRouter } from "./routes/pacienteRoutes";
+import { profissionalRouter } from "./routes/profissionalRoutes";
 import { usuarioRouter } from "./routes/usuarioRoutes";
 import { obterSegredoJwt } from "./services/sessaoService";
 
@@ -14,6 +16,8 @@ app.use(express.json({ limit: "100kb" }));
 app.use("/api/usuarios", usuarioRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/estatisticas", estatisticasRouter);
+app.use("/api/pacientes", pacienteRouter);
+app.use("/api/profissionais", profissionalRouter);
 
 app.get("/api/health", (_request, response) => {
   response.json({ status: "ok" });

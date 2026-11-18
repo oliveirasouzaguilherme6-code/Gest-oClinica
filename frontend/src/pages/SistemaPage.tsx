@@ -40,24 +40,56 @@ export function SistemaPage() {
 
   return (
     <SistemaLayout paginaAtiva="visao-geral">
-      <section className="card system-card">
+      <section className="dashboard-heading">
+        <span className="eyebrow">Área do sistema</span>
         <h1>Bem-vindo, {primeiroNome}</h1>
-
-        <div className="user-details">
-          <div>
-            <span>Nome</span>
-            <strong>{usuario.nome}</strong>
-          </div>
-          <div>
-            <span>E-mail</span>
-            <strong>{usuario.email}</strong>
-          </div>
-        </div>
-
-        <a className="button-link secondary-button" href="/estatisticas">
-          Ver estatísticas
-        </a>
+        <p className="description">Acesse os cadastros e as informações da clínica.</p>
       </section>
+
+      <div className="dashboard-layout">
+        <section className="card dashboard-section" aria-labelledby="titulo-cadastros">
+          <div className="dashboard-section-heading">
+            <div>
+              <span className="section-label">Cadastros</span>
+              <h2 id="titulo-cadastros">Organização da clínica</h2>
+            </div>
+            <span className="section-count">2 módulos</span>
+          </div>
+
+          <div className="module-list">
+            <a className="module-row" href="/pacientes">
+              <div>
+                <h3>Pacientes</h3>
+                <p>Dados pessoais e informações de contato.</p>
+              </div>
+              <strong>Abrir</strong>
+            </a>
+
+            <a className="module-row" href="/profissionais">
+              <div>
+                <h3>Profissionais</h3>
+                <p>Registros, especialidades e situação da equipe.</p>
+              </div>
+              <strong>Abrir</strong>
+            </a>
+          </div>
+        </section>
+
+        <div className="dashboard-side">
+          <section className="card dashboard-section compact-section">
+            <span className="section-label">Relatórios</span>
+            <h2>Estatísticas</h2>
+            <p>Acompanhe os usuários cadastrados no sistema.</p>
+            <a className="text-link" href="/estatisticas">Ver análise</a>
+          </section>
+
+          <section className="account-summary">
+            <span>Usuário conectado</span>
+            <strong>{usuario.nome}</strong>
+            <small>{usuario.email}</small>
+          </section>
+        </div>
+      </div>
     </SistemaLayout>
   );
 }

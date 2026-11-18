@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 import { CadastroPage } from "./pages/CadastroPage";
 import { EstatisticasPage } from "./pages/EstatisticasPage";
-import { InicioPage } from "./pages/InicioPage";
 import { LoginPage } from "./pages/LoginPage";
+import { PacientesPage } from "./pages/PacientesPage";
+import { ProfissionaisPage } from "./pages/ProfissionaisPage";
+import { SitePage } from "./pages/SitePage";
 import { SistemaPage } from "./pages/SistemaPage";
 
 type PublicLayoutProps = {
-  pagina: "inicio" | "cadastro" | "login";
+  pagina: "cadastro" | "login";
   children: ReactNode;
 };
 
@@ -14,19 +16,17 @@ function PublicLayout({ pagina, children }: PublicLayoutProps) {
   return (
     <div className="page">
       <header className="simple-header">
-        <a className="simple-brand" href="/" aria-current={pagina === "inicio" ? "page" : undefined}>
-          Gestão Clínica
-        </a>
+        <a className="simple-brand" href="/">Clínica Vida</a>
         <nav aria-label="Navegação principal">
-          {pagina === "inicio" && <a href="#sobre">Sobre</a>}
-          <a href="/login" aria-current={pagina === "login" ? "page" : undefined}>Entrar</a>
+          <a href="/">Site da clínica</a>
+          <a href="/login" aria-current={pagina === "login" ? "page" : undefined}>Login</a>
           <a href="/cadastro" aria-current={pagina === "cadastro" ? "page" : undefined}>Cadastro</a>
         </nav>
       </header>
 
-      <main className={pagina === "inicio" ? "institutional-main" : "auth-main"}>{children}</main>
+      <main className="auth-main">{children}</main>
 
-      <footer className="simple-footer">Projeto acadêmico</footer>
+      <footer className="simple-footer">Clínica Vida - Projeto acadêmico</footer>
     </div>
   );
 }
@@ -45,7 +45,7 @@ function App() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
 
   if (path === "/") {
-    return <PublicLayout pagina="inicio"><InicioPage /></PublicLayout>;
+    return <SitePage />;
   }
 
   if (path === "/login") {
@@ -58,6 +58,14 @@ function App() {
 
   if (path === "/sistema") {
     return <SistemaPage />;
+  }
+
+  if (path === "/pacientes") {
+    return <PacientesPage />;
+  }
+
+  if (path === "/profissionais") {
+    return <ProfissionaisPage />;
   }
 
   if (path === "/estatisticas") {

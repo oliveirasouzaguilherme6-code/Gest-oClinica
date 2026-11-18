@@ -2,7 +2,18 @@
 
 Sistema acadêmico para apoiar a administração de uma clínica ou consultório. O projeto está dividido em frontend React e API Node.js, com persistência em MySQL.
 
-## Escopo da Sprint 1
+## Estado atual do projeto
+
+O cadastro de usuários da Sprint 1 está concluído. O sistema também avançou para metade dos quatro módulos principais planejados:
+
+- Pacientes: CRUD completo.
+- Profissionais: CRUD completo.
+- Serviços: planejado para a próxima etapa.
+- Consultas: planejado para a próxima etapa.
+
+CRUD significa cadastrar, listar, editar e excluir registros.
+
+## Sprint 1 concluída
 
 Esta entrega contempla os itens pedidos na Sprint 1:
 
@@ -14,7 +25,7 @@ Esta entrega contempla os itens pedidos na Sprint 1:
 - Redirecionamento para o login após o cadastro.
 - Gráfico de barras usando cadastros reais do MySQL.
 
-Os módulos de pacientes, profissionais, serviços e consultas pertencem às próximas sprints.
+Além da Sprint 1, os módulos de pacientes e profissionais já estão disponíveis no sistema.
 
 ## Site institucional e sistema
 
@@ -46,7 +57,7 @@ Gest-oClinica/
 4. Ajuste os dados de conexão caso seu MySQL use outra porta ou senha.
 5. Gere uma chave com `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` e preencha `JWT_SECRET` no `backend/.env` com o valor gerado.
 
-Ao iniciar a API, o Sequelize cria as tabelas `usuarios` e `sessoes`.
+Ao iniciar a API, o Sequelize cria as tabelas `usuarios`, `sessoes`, `pacientes` e `profissionais`.
 
 ## Como executar
 
@@ -77,6 +88,14 @@ Abra [http://127.0.0.1:5173](http://127.0.0.1:5173). O XAMPP fornece o MySQL. O 
 | GET | `/api/auth/me` | Consultar a sessão atual |
 | POST | `/api/auth/logout` | Encerrar a sessão |
 | GET | `/api/estatisticas/cadastros` | Consultar cadastros por dia |
+| GET | `/api/pacientes` | Listar pacientes |
+| POST | `/api/pacientes` | Cadastrar paciente |
+| PUT | `/api/pacientes/:id` | Atualizar paciente |
+| DELETE | `/api/pacientes/:id` | Excluir paciente |
+| GET | `/api/profissionais` | Listar profissionais |
+| POST | `/api/profissionais` | Cadastrar profissional |
+| PUT | `/api/profissionais/:id` | Atualizar profissional |
+| DELETE | `/api/profissionais/:id` | Excluir profissional |
 | GET | `/api/health` | Verificar a disponibilidade da API |
 
 ## Regras do cadastro
